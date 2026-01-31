@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import puppeteer from 'puppeteer'
+import { getBrowser } from '@/lib/puppeteer'
 import * as cheerio from 'cheerio'
 
 export async function POST(request: Request) {
@@ -9,7 +9,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'URL is required' }, { status: 400 })
     }
 
-    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] })
+    const browser = await getBrowser()
 
     try {
         const page = await browser.newPage()
