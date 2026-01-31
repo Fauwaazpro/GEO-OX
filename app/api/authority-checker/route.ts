@@ -21,7 +21,8 @@ export async function POST(request: Request) {
 
         // Data structures
         const pages = new Set<string>()
-        const links: any[] = [] // {source: string, target: string}
+        type LinkItem = { source: string; target: string }
+        const links: LinkItem[] = []
         const queue = [url]
         const visited = new Set<string>()
         const maxPages = 30 // Limit for safety/speed
@@ -36,12 +37,12 @@ export async function POST(request: Request) {
             try {
                 await page.goto(currentUrl, { waitUntil: 'domcontentloaded', timeout: 5000 })
 
-                const foundLinks = await page.evaluate((origin: any) => {
+                const foundLinks = (await page.evaluate((origin: string) => {
                     const anchors = Array.from(document.querySelectorAll('a'))
                     return anchors
                         .map(a => a.href)
                         .filter(href => href.startsWith(origin) && !href.includes('#') && !href.match(/\.(jpg|png|pdf|css|js)$/))
-                }, origin)
+                }, origin)) as string[]
 
                 const uniqueLinks = [...new Set(foundLinks)]
 
@@ -76,7 +77,8 @@ export async function POST(request: Request) {
         const orphans = nodes.filter(n => n.type !== 'root' && n.degree === 0).map(n => n.id)
 
         // Identify Clusters (Simple community detection via connected components of high degree nodes)
-        const clusters: any[] = []
+        type Cluster = { name: string; count: number }
+        const clusters: Cluster[] = []
         // Group by first path segment
         nodes.forEach(node => {
             const path = new URL(node.id).pathname

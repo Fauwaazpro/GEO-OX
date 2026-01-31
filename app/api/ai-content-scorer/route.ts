@@ -41,7 +41,13 @@ export async function POST(request: Request) {
 
         const apiKey = process.env.OPENAI_API_KEY
 
-        let aiResponse = {};
+        type AIResponse = {
+            score?: number
+            sentiment?: string
+            insights?: any[]
+        }
+
+        let aiResponse: AIResponse = {};
 
         if (apiKey) {
             const prompt = `

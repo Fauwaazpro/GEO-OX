@@ -52,13 +52,13 @@ export async function POST(request: Request) {
 
         // 3. Discovery Phase: Find internal links (Limit 25 for speed)
         await page.goto(normalizedUrl, { waitUntil: 'domcontentloaded', timeout: 20000 })
-        const links = await page.evaluate((origin) => {
+        const links = (await page.evaluate((origin: string) => {
             const anchors = Array.from(document.querySelectorAll('a'))
             return Array.from(new Set(anchors
                 .map(a => a.href)
                 .filter(href => href.startsWith(origin) && !href.includes('#') && !href.match(/\.(jpg|png|pdf)$/))
             )).slice(0, 25)
-        }, domain)
+        }, domain)) as string[]
 
         // Make sure we include the start URL
         if (!links.includes(normalizedUrl)) links.unshift(normalizedUrl)
@@ -102,7 +102,14 @@ export async function POST(request: Request) {
         })
 
         // 6. Compare All Pairs
-        const duplicates = []
+        type DuplicateItem = {
+            url1: string
+            url2: string
+            similarity: number
+            duplicateText: string
+            recommendation: string
+        }
+        const duplicates: DuplicateItem[] = []
         for (let i = 0; i < crawledPages.length; i++) {
             for (let j = i + 1; j < crawledPages.length; j++) {
                 const pageA = crawledPages[i]

@@ -69,7 +69,7 @@ export async function POST(request: Request) {
         if (keyword && !targetCompetitorUrl) {
             // Search for competitor
             await page.goto(`https://duckduckgo.com/?q=${encodeURIComponent(keyword)}`, { waitUntil: 'networkidle0' })
-            targetCompetitorUrl = await page.evaluate((userDomain: any) => {
+            targetCompetitorUrl = await page.evaluate((userDomain: string) => {
                 const results = Array.from(document.querySelectorAll('.result__a')) as HTMLAnchorElement[]
                 for (const res of results) {
                     if (!res.href.includes(userDomain) && !res.href.includes('duckduckgo')) {
@@ -88,7 +88,8 @@ export async function POST(request: Request) {
         browser = null
 
         // 3. Compare & Generate Gaps
-        const gaps = []
+        type Gap = { category: string, issue: string, detail: string }
+        const gaps: Gap[] = []
         if (competitorMetrics) {
             if (userMetrics.wordCount < competitorMetrics.wordCount * 0.8) {
                 gaps.push({ category: 'Content Depth', issue: `Thin Content`, detail: `You have ${userMetrics.wordCount} words, competitor has ${competitorMetrics.wordCount}.` })
