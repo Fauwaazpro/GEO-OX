@@ -1,15 +1,14 @@
 
-import core from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
+// Utility to get the correct browser instance (Local vs Vercel)
+// We use dynamic imports for Vercel deps to prevent local crashes when packages are missing
+import { type Browser } from 'puppeteer';
 
-// Optional: standard puppeteer for local development (if installed)
-// We use dynamic import to avoid bundling it in serverless if possible, 
-// but Next.js usually handles this if we are careful.
 let localPuppeteer: any = null;
 try {
+    // Try to start with local puppeteer if available
     localPuppeteer = require('puppeteer');
 } catch (e) {
-    // Puppeteer not installed locally? (Should be in devDeps)
+    console.warn("Local puppeteer not found");
 }
 
 export async function getBrowser() {
@@ -17,16 +16,21 @@ export async function getBrowser() {
     const isVercel = !!process.env.VERCEL_URL || !!process.env.NEXT_PUBLIC_VERCEL_URL;
 
     // 1. Production (Vercel) -> Use puppeteer-core + @sparticuz/chromium
+    // We use dynamic imports so this doesn't break local dev if packages are missing
     if (isProduction || isVercel) {
         try {
-             // Config for Vercel
+             console.log("Launching Vercel/Core Browser...");
+             // Dynamically import to avoid "Module not found" locally
+             const chromium = (await import('@sparticuz/chromium')).default;
+             const core = (await import('puppeteer-core')).default;
+
              chromium.setGraphicsMode = false;
              
              return await core.launch({
                 args: chromium.args,
                 defaultViewport: chromium.defaultViewport,
                 executablePath: await chromium.executablePath(),
-                headless: chromium.headless === 'true' ? true : chromium.headless, // normalize boolean
+                headless: chromium.headless === 'true' ? true : chromium.headless,
                 ignoreHTTPSErrors: true,
             });
         } catch (error) {
@@ -37,6 +41,7 @@ export async function getBrowser() {
     
     // 2. Local Development -> Use full Puppeteer
     if (localPuppeteer) {
+        console.log("Launching Local Puppeteer...");
         return await localPuppeteer.launch({
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox']
