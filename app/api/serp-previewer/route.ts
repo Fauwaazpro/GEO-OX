@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import puppeteer from 'puppeteer'
+import { getBrowser } from '@/lib/puppeteer'
 import { SimpleCache, normalizeInput } from '@/lib/api-utils'
 
 const cache = new SimpleCache(3600000)
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
     let browser = null
     try {
-        browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] })
+        browser = await getBrowser()
         const page = await browser.newPage()
 
         // Block resources for speed
