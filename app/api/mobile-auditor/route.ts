@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { hashString, SimpleCache, normalizeInput } from '@/lib/api-utils'
-import puppeteer from 'puppeteer'
+import { getBrowser } from '@/lib/puppeteer'
 
 const cache = new SimpleCache(3600000) // 1 hour cache
 
@@ -10,6 +10,9 @@ export async function POST(request: Request) {
     if (!url) {
         return NextResponse.json({ error: 'URL is required' }, { status: 400 })
     }
+    
+    let browser = null;
+    let page = null;
 
     try {
         const normalizedUrl = normalizeInput(url)
@@ -29,12 +32,8 @@ export async function POST(request: Request) {
         let screenshot = null
         let evaluation: any = null;
 
-        let browser = null;
         try {
-            browser = await puppeteer.launch({
-                headless: true,
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
-            })
+            browser = await getBrowser()
             const page = await browser.newPage()
 
             // Set mobile viewport (iPhone 13 Pro)
