@@ -9,6 +9,7 @@ const nextConfig = {
         ],
     },
     experimental: {
+        serverComponentsExternalPackages: ['puppeteer-core', '@sparticuz/chromium'],
         serverActions: {
             allowedOrigins: ['localhost:3000'],
         },

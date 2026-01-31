@@ -21,7 +21,9 @@ export async function getBrowser() {
         try {
              console.log("Launching Vercel/Core Browser...");
              // Dynamically import to avoid "Module not found" locally
+             // @ts-ignore
              const chromium = (await import('@sparticuz/chromium')).default;
+             // @ts-ignore
              const core = (await import('puppeteer-core')).default;
 
              chromium.setGraphicsMode = false;
