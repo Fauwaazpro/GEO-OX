@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
         // Block resources for speed
         await page.setRequestInterception(true)
-        page.on('request', (req) => {
+        page.on('request', (req: any) => {
             if (['image', 'stylesheet', 'font'].includes(req.resourceType())) {
                 req.abort()
             } else {

@@ -29,7 +29,7 @@ export async function POST(request: Request) {
         const searchUrl = `https://duckduckgo.com/html/?q=${encodeURIComponent(keyword)}`
         await page.goto(searchUrl, { waitUntil: 'load', timeout: 20000 })
 
-        const data = await page.evaluate(() => {
+        const data = (await page.evaluate(() => {
             const results: { keyword: string, source: string, relevance: number }[] = []
 
             // 1. "Related" usually appears as plain links or bold text in snippets
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
             })
 
             return results
-        })
+        })) as { keyword: string, source: string, relevance: number }[]
 
         console.log(`[LSI-Extract] Found ${data.length} raw items from DDG`)
 
