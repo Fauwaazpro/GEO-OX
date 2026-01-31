@@ -9,7 +9,7 @@ const nextConfig = {
         ],
     },
     experimental: {
-        serverComponentsExternalPackages: ['puppeteer-core', '@sparticuz/chromium'],
+        serverComponentsExternalPackages: ['puppeteer-core', '@sparticuz/chromium', 'natural'],
         serverActions: {
             allowedOrigins: ['localhost:3000'],
         },
@@ -18,6 +18,8 @@ const nextConfig = {
         config.externals.push({
             '@sparticuz/chromium': 'commonjs @sparticuz/chromium',
             'puppeteer-core': 'commonjs puppeteer-core',
+            'webworker-threads': 'commonjs webworker-threads',
+            'natural': 'commonjs natural', // treat natural as external too just in case
         });
         return config;
     },
