@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     try {
         const normalizedBrand = normalizeInput(brandName)
         const normalizedKeywords = normalizeInput(keywords || '')
-        const cacheKey = `ai_citation_${normalizedBrand}_${normalizedKeywords}`
+        const cacheKey = `ai_citation_${normalizedBrand}_${normalizedKeywords}_v2`
 
         // Check cache
         const cached = cache.get(cacheKey)
@@ -21,73 +21,133 @@ export async function POST(request: Request) {
             return NextResponse.json(cached)
         }
 
-        const apiKey = process.env.OPENAI_API_KEY
-        if (!apiKey) {
+        const openAiKey = process.env.OPENAI_API_KEY
+        const anthropicKey = process.env.ANTHROPIC_API_KEY
+
+        if (!openAiKey) {
             throw new Error("Missing OpenAI API Key")
         }
 
-        // Prompt for OpenAI
-        const prompt = `
-        Analyze the brand "${brandName}" in the context of "${keywords || 'general industry'}". 
-        Simulate how this brand appears in Generative Engine Optimization (GEO) results.
+        const systemPrompt = "You are a GEO (Generative Engine Optimization) expert. Output valid JSON only."
         
-        Provide the following in JSON format:
-        1. visibilityScore: A score from 0-100 indicating how prominent the brand is in AI answers.
-        2. results: An array of 3 objects for engines ["Perplexity AI", "ChatGPT", "Google Gemini"]. 
-           Each object should have:
-           - engine (name)
-           - isVisible (boolean)
-           - sentiment (positive, neutral, negative)
-           - snippet (a simulated answer text provided by this AI)
-           - sources (array of objects with title, domain) - relevant if isVisible is true
-        3. recommendations: An array of advice to improve GEO visibility.
+        // 1. OpenAI Prompt: Simulate Perplexity and ChatGPT
+        const openAiPrompt = `
+        Analyze the brand "${brandName}" in the context of "${keywords || 'general industry'}". 
+        Simulate how this brand appears in:
+        1. Perplexity AI
+        2. ChatGPT
+        
+        Provide JSON output with this structure:
+        {
+          "results": [
+             { "engine": "Perplexity AI", "isVisible": boolean, "sentiment": "positive"|"neutral"|"negative", "snippet": "...", "sources": [{"title": "...", "domain": "..."}] },
+             { "engine": "ChatGPT", "isVisible": boolean, "sentiment": "positive"|"neutral"|"negative", "snippet": "..." }
+          ],
+          "recommendations": [ { "priority": "high"|"medium"|"low", "title": "...", "description": "...", "action": "..." } ]
+        }
         `
 
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model: "gpt-3.5-turbo",
-                messages: [
-                    { role: "system", content: "You are a GEO (Generative Engine Optimization) expert. Output valid JSON only." },
-                    { role: "user", content: prompt }
-                ],
-                response_format: { type: "json_object" }
-            })
-        })
+        // 2. Anthropic Prompt: Real Claude Analysis
+        const anthropicPrompt = `
+        Do you know the brand "${brandName}" in the industry of "${keywords || 'business'}"? 
+        If you know it, provide a short summary of how you would cite it.
+        
+        Output purely valid JSON (no intro text) with this structure:
+        {
+          "engine": "Claude",
+          "isVisible": boolean, 
+          "sentiment": "positive"|"neutral"|"negative",
+          "snippet": "Your actual knowledge cutoff summary of the brand...",
+          "confidence": number (0-100)
+        }
+        `
 
-        if (!response.ok) {
-            const errorText = await response.text()
-            throw new Error(`OpenAI API Error: ${response.status} - ${errorText}`)
+        // Execute Requests in Parallel
+        const [openAiResponse, anthropicResponse] = await Promise.allSettled([
+            fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openAiKey}` },
+                body: JSON.stringify({
+                    model: "gpt-3.5-turbo",
+                    messages: [{ role: "system", content: systemPrompt }, { role: "user", content: openAiPrompt }],
+                    response_format: { type: "json_object" }
+                })
+            }),
+            anthropicKey ? fetch('https://api.anthropic.com/v1/messages', {
+                 method: 'POST',
+                 headers: {
+                     'x-api-key': anthropicKey,
+                     'anthropic-version': '2023-06-01',
+                     'content-type': 'application/json'
+                 },
+                 body: JSON.stringify({
+                     model: "claude-3-haiku-20240307",
+                     max_tokens: 1024,
+                     messages: [{ role: "user", content: anthropicPrompt }]
+                 })
+             }) : Promise.resolve(null)
+        ])
+
+        // Process OpenAI Results
+        let aiResults: any[] = []
+        let recommendations: any[] = []
+
+        if (openAiResponse.status === 'fulfilled' && openAiResponse.value.ok) {
+            const data = await openAiResponse.value.json()
+            const content = JSON.parse(data.choices[0]?.message?.content || '{}')
+            aiResults = content.results || []
+            recommendations = content.recommendations || []
+        } else {
+            console.error("OpenAI Failed", openAiResponse)
+             aiResults.push(
+                { engine: "Perplexity AI", isVisible: false, sentiment: "neutral", snippet: "Analysis unavailable" },
+                { engine: "ChatGPT", isVisible: false, sentiment: "neutral", snippet: "Analysis unavailable" }
+             )
         }
 
-        const data = await response.json()
-        const content = data.choices[0]?.message?.content
-        
-        if (!content) throw new Error("No content received from OpenAI")
-        
-        const aiData = JSON.parse(content)
+        // Process Anthropic Results
+        if (anthropicResponse.status === 'fulfilled' && anthropicResponse.value && anthropicResponse.value.ok) {
+            const data = await anthropicResponse.value.json()
+            // Claude sometimes puts text in data.content[0].text
+            const text = data.content?.[0]?.text || '{}'
+            // Extract JSON if mixed with text
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            const claudeJson = jsonMatch ? JSON.parse(jsonMatch[0]) : { isVisible: false, snippet: "Could not parse Claude response" }
+            
+            aiResults.push({
+                ...claudeJson,
+                engine: "Claude",
+                logo: "anthropic"
+            })
+        } else if (anthropicKey) {
+             console.error("Anthropic Failed", anthropicResponse)
+             aiResults.push({ engine: "Claude", isVisible: false, sentiment: "neutral", snippet: "Real-time check failed", logo: "anthropic" })
+        } else {
+             // Mock Claude if no key (though we have it now)
+             aiResults.push({ engine: "Claude", isVisible: false, sentiment: "neutral", snippet: "API Key missing", logo: "anthropic" })
+        }
 
-        // Enhance results with local static data (like logos)
+        // Calculate aggregate visibility score
+        const visibleCount = aiResults.filter(r => r.isVisible).length
+        const visibilityScore = Math.round((visibleCount / aiResults.length) * 100)
+
+        // Enhance results with logos
         const enginesMap: Record<string, string> = {
             "Perplexity AI": "perplexity",
             "ChatGPT": "chatgpt",
-            "Google Gemini": "gemini"
+            "Claude": "anthropic"
         }
 
-        const enhancedResults = aiData.results?.map((r: any) => ({
+        const enhancedResults = aiResults.map((r: any) => ({
             ...r,
             logo: enginesMap[r.engine] || 'default',
             confidence: r.isVisible ? 85 : 0
-        })) || []
+        }))
 
         const responseData = {
-            visibilityScore: aiData.visibilityScore || 0,
+            visibilityScore,
             results: enhancedResults,
-            recommendations: aiData.recommendations || [],
+            recommendations,
             analyzedAt: new Date().toISOString()
         }
 
@@ -99,7 +159,7 @@ export async function POST(request: Request) {
         
         return NextResponse.json({
             error: 'Analysis failed',
-            message: 'Real-time analysis unavailable. Please check your OpenAI API key configuration.'
+            message: error.message || 'Real-time analysis unavailable.'
         }, { status: 500 })
     }
 }
