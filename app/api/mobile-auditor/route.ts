@@ -69,7 +69,8 @@ export async function POST(request: Request) {
                 textElements.forEach(el => {
                     const style = window.getComputedStyle(el);
                     const fontSize = parseFloat(style.fontSize);
-                    if (fontSize < 16 && el.innerText.trim().length > 0) {
+                    const text = (el as HTMLElement).innerText; // Cast to HTMLElement
+                    if (fontSize < 16 && text && text.trim().length > 0) {
                         smallFontCount++;
                     }
                 });
@@ -78,10 +79,10 @@ export async function POST(request: Request) {
                 const hasHorizontalScroll = document.documentElement.scrollWidth > window.innerWidth;
                 const overflowWidth = document.documentElement.scrollWidth;
 
-                // 6. Touch Event Optimization (Check for passive listeners or touch-action)
-                // This is hard to detect perfectly without performance profile, checking for 'touch-action' css
+                // 6. Touch Event Optimization
                 const bodyStyle = window.getComputedStyle(document.body);
-                const hasTouchOptimization = bodyStyle.touchAction !== 'auto' || !!document.querySelector('meta[name="viewport"]'); // rough proxy
+                // @ts-ignore
+                const hasTouchOptimization = bodyStyle.touchAction !== 'auto' || !!document.querySelector('meta[name="viewport"]');
 
                 return {
                     hasViewport,
