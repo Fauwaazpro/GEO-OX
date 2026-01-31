@@ -4,11 +4,11 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { TOOLS } from "@/lib/constants"
+import { TOOLS, type Tool } from "@/lib/constants"
 import { ArrowLeft, Wrench } from "lucide-react"
 
 export default function ToolPage({ params }: { params: { slug: string } }) {
-    const tool = TOOLS.find(t => t.slug === params.slug)
+    const tool = TOOLS.find(t => t.slug === params.slug) as Tool | undefined
 
     if (!tool) {
         notFound()
@@ -58,7 +58,7 @@ export default function ToolPage({ params }: { params: { slug: string } }) {
                         <CardContent className="text-center pb-12">
                             <div className="space-y-6">
                                 <div className="p-6 bg-surface rounded-lg">
-                                    <h3 className="font-semibold text-lg mb-2">dYs  Under Development</h3>
+                                    <h3 className="font-semibold text-lg mb-2">🚧 Under Development</h3>
                                     <p className="text-muted-foreground">
                                         This tool is currently being built and will be available soon.
                                     </p>
@@ -107,19 +107,19 @@ export default function ToolPage({ params }: { params: { slug: string } }) {
                         <CardContent>
                             <ul className="space-y-2 text-sm text-muted-foreground">
                                 <li className="flex items-start gap-2">
-                                    <span className="text-primary">o"</span>
+                                    <span className="text-primary">✓</span>
                                     <span>Real-time analysis and actionable insights</span>
                                 </li>
                                 <li className="flex items-start gap-2">
-                                    <span className="text-primary">o"</span>
+                                    <span className="text-primary">✓</span>
                                     <span>Split-screen interface with instant solutions</span>
                                 </li>
                                 <li className="flex items-start gap-2">
-                                    <span className="text-primary">o"</span>
+                                    <span className="text-primary">✓</span>
                                     <span>One-click code generation and export</span>
                                 </li>
                                 <li className="flex items-start gap-2">
-                                    <span className="text-primary">o"</span>
+                                    <span className="text-primary">✓</span>
                                     <span>Professional-grade accuracy and performance</span>
                                 </li>
                             </ul>
