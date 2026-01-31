@@ -29,7 +29,7 @@ export async function POST(request: Request) {
         }
 
         const systemPrompt = "You are a GEO (Generative Engine Optimization) expert. Output valid JSON only."
-        
+
         // 1. OpenAI Prompt: Simulate Perplexity and ChatGPT
         const openAiPrompt = `
         Analyze the brand "${brandName}" in the context of "${keywords || 'general industry'}". 
@@ -74,18 +74,18 @@ export async function POST(request: Request) {
                 })
             }),
             anthropicKey ? fetch('https://api.anthropic.com/v1/messages', {
-                 method: 'POST',
-                 headers: {
-                     'x-api-key': anthropicKey,
-                     'anthropic-version': '2023-06-01',
-                     'content-type': 'application/json'
-                 },
-                 body: JSON.stringify({
-                     model: "claude-3-haiku-20240307",
-                     max_tokens: 1024,
-                     messages: [{ role: "user", content: anthropicPrompt }]
-                 })
-             }) : Promise.resolve(null)
+                method: 'POST',
+                headers: {
+                    'x-api-key': anthropicKey,
+                    'anthropic-version': '2023-06-01',
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: "claude-3-haiku-20240307",
+                    max_tokens: 1024,
+                    messages: [{ role: "user", content: anthropicPrompt }]
+                })
+            }) : Promise.resolve(null)
         ])
 
         // Process OpenAI Results
@@ -99,10 +99,10 @@ export async function POST(request: Request) {
             recommendations = content.recommendations || []
         } else {
             console.error("OpenAI Failed", openAiResponse)
-             aiResults.push(
+            aiResults.push(
                 { engine: "Perplexity AI", isVisible: false, sentiment: "neutral", snippet: "Analysis unavailable" },
                 { engine: "ChatGPT", isVisible: false, sentiment: "neutral", snippet: "Analysis unavailable" }
-             )
+            )
         }
 
         // Process Anthropic Results
@@ -113,18 +113,18 @@ export async function POST(request: Request) {
             // Extract JSON if mixed with text
             const jsonMatch = text.match(/\{[\s\S]*\}/);
             const claudeJson = jsonMatch ? JSON.parse(jsonMatch[0]) : { isVisible: false, snippet: "Could not parse Claude response" }
-            
+
             aiResults.push({
                 ...claudeJson,
                 engine: "Claude",
                 logo: "anthropic"
             })
         } else if (anthropicKey) {
-             console.error("Anthropic Failed", anthropicResponse)
-             aiResults.push({ engine: "Claude", isVisible: false, sentiment: "neutral", snippet: "Real-time check failed", logo: "anthropic" })
+            console.error("Anthropic Failed", anthropicResponse)
+            aiResults.push({ engine: "Claude", isVisible: false, sentiment: "neutral", snippet: "Real-time check failed", logo: "anthropic" })
         } else {
-             // Mock Claude if no key (though we have it now)
-             aiResults.push({ engine: "Claude", isVisible: false, sentiment: "neutral", snippet: "API Key missing", logo: "anthropic" })
+            // Mock Claude if no key (though we have it now)
+            aiResults.push({ engine: "Claude", isVisible: false, sentiment: "neutral", snippet: "API Key missing", logo: "anthropic" })
         }
 
         // Calculate aggregate visibility score
@@ -156,7 +156,7 @@ export async function POST(request: Request) {
         return NextResponse.json(responseData)
     } catch (error: any) {
         console.error('AI citation check failed:', error)
-        
+
         return NextResponse.json({
             error: 'Analysis failed',
             message: error.message || 'Real-time analysis unavailable.'

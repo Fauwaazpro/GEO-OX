@@ -40,7 +40,7 @@ export async function POST(request: Request) {
         const uniqueDensity = type === 'text' ? calculateInformationDensity(content) : 40
 
         const apiKey = process.env.OPENAI_API_KEY
-        
+
         let aiResponse = {};
 
         if (apiKey) {
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
                 console.error("OpenAI API call failed", await response.text())
             }
         }
-        
+
         // If AI fails or no key, fallback to basic scoring (implicit via empty aiResponse)
         const result = {
             score: aiResponse.score || 75,
