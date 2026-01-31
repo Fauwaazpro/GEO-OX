@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
         // Get all links to internal pages to crawl a few more
         const origin = new URL(url).origin
-        const internalLinks = await page.evaluate((origin) => {
+        const internalLinks = await page.evaluate((origin: string) => {
             const links = Array.from(document.querySelectorAll('a'))
                 .map(a => a.href)
                 .filter(href => href.startsWith(origin) && !href.includes('#'))
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
         }, origin)
 
         const pagesToCrawl = [url, ...internalLinks]
-        const opportunities = []
+        const opportunities: any[] = []
 
         for (const pageUrl of pagesToCrawl) {
             try {
@@ -42,8 +42,8 @@ export async function POST(request: Request) {
                 }
 
                 // Execute script in browser to find text nodes containing brand but NOT in <a> tags
-                const unlinkedMentions = await page.evaluate((brand) => {
-                    const mentions = []
+                const unlinkedMentions = await page.evaluate((brand: string) => {
+                    const mentions: any[] = []
                     const walker = document.createTreeWalker(
                         document.body,
                         NodeFilter.SHOW_TEXT,
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
                 }, brandName)
 
                 // Add to opportunities
-                unlinkedMentions.slice(0, 3).forEach(mention => {
+                unlinkedMentions.slice(0, 3).forEach((mention: any) => {
                     opportunities.push({
                         domain: new URL(pageUrl).pathname,
                         authority: 0, // Not applicable for internal

@@ -15,11 +15,11 @@ export async function POST(request: Request) {
         await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 })
 
         // Get all internal links
-        const links = await page.$$eval('a[href]', anchors => {
+        const links = await page.$$eval('a[href]', (anchors: Element[]) => {
             const baseUrl = window.location.origin
             return anchors
-                .filter(a => (a as HTMLAnchorElement).href.startsWith(baseUrl))
-                .map(a => ({
+                .filter((a: Element) => (a as HTMLAnchorElement).href.startsWith(baseUrl))
+                .map((a: Element) => ({
                     href: (a as HTMLAnchorElement).href,
                     text: (a as HTMLAnchorElement).innerText.trim(),
                     context: (a as HTMLAnchorElement).closest('p, div, li')?.textContent?.slice(0, 100) || ''

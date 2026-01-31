@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getBrowser } from '@/lib/puppeteer'
+// @ts-ignore
 import levenshtein from 'fast-levenshtein'
 
 export async function POST(request: Request) {
@@ -66,10 +67,10 @@ export async function POST(request: Request) {
 
         // Look for common duplicate patterns
         const patterns = [
-            { pattern: /\/about/, matches: allUrls.filter(u => /\/(about|about-us|company)/i.test(u.url)) },
-            { pattern: /\/contact/, matches: allUrls.filter(u => /\/(contact|get-in-touch|reach-us)/i.test(u.url)) },
-            { pattern: /\/pricing/, matches: allUrls.filter(u => /\/(pricing|plans|packages)/i.test(u.url)) },
-            { pattern: /\/blog/, matches: allUrls.filter(u => /\/(blog|news|articles)/i.test(u.url)) }
+            { pattern: /\/about/, matches: allUrls.filter((u: any) => /\/(about|about-us|company)/i.test(u.url)) },
+            { pattern: /\/contact/, matches: allUrls.filter((u: any) => /\/(contact|get-in-touch|reach-us)/i.test(u.url)) },
+            { pattern: /\/pricing/, matches: allUrls.filter((u: any) => /\/(pricing|plans|packages)/i.test(u.url)) },
+            { pattern: /\/blog/, matches: allUrls.filter((u: any) => /\/(blog|news|articles)/i.test(u.url)) }
         ]
 
         patterns.forEach(p => {

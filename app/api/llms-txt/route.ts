@@ -46,13 +46,13 @@ ${pageData.description || `${domain} provides comprehensive information and serv
 
 ## Main Topics
 
-${pageData.headings.slice(0, 5).map((heading, idx) => `### ${heading}
+${pageData.headings.slice(0, 5).map((heading: string, idx: number) => `### ${heading}
 ${pageData.paragraphs[idx] || 'Detailed information about this topic...'}
 `).join('\n')}
 
 ## Key Information
 
-${pageData.lists.slice(0, 10).map(item => `- ${item}`).join('\n')}
+${pageData.lists.slice(0, 10).map((item: string) => `- ${item}`).join('\n')}
 
 ## Services/Products
 

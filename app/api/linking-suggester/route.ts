@@ -9,7 +9,7 @@ async function crawlForLinking(page: any, url: string, isSource: boolean) {
     try {
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 })
 
-        return await page.evaluate((isSourcePage) => {
+        return await page.evaluate((isSourcePage: boolean) => {
             const title = document.title
             const h1 = document.querySelector('h1')?.innerText || ''
             const text = document.body.innerText
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
         // 2. Crawl Domain to find destinations (Limit 20 pages)
         // We start from the domain root and look for links
         await page.goto(normalizedDomain, { waitUntil: 'domcontentloaded', timeout: 30000 })
-        const internalLinks = await page.evaluate((domain) => {
+        const internalLinks = await page.evaluate((domain: string) => {
             const links = Array.from(document.querySelectorAll('a'))
                 .map(a => a.href)
                 .filter(href => href.includes(domain) && !href.includes('#'))
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
         // Fallback: If no direct exact matches, try partial keyword matching
         if (suggestions.length === 0) {
             for (const dest of potentialDestinations) {
-                const keywords = dest.keywords.split(' ').filter(w => w.length > 5)
+                const keywords = dest.keywords.split(' ').filter((w: string) => w.length > 5)
                 for (const word of keywords) {
                     if (sourceTextLower.includes(word)) {
                         const index = sourceTextLower.indexOf(word)
