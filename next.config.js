@@ -14,6 +14,13 @@ const nextConfig = {
             allowedOrigins: ['localhost:3000'],
         },
     },
+    webpack: (config) => {
+        config.externals.push({
+            '@sparticuz/chromium': 'commonjs @sparticuz/chromium',
+            'puppeteer-core': 'commonjs puppeteer-core',
+        });
+        return config;
+    },
 }
 
 module.exports = nextConfig
