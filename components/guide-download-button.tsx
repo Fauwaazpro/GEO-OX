@@ -27,8 +27,11 @@ export function GuideDownloadButton({ className, variant = "default", size = "de
     }, [])
 
     const handleDownload = () => {
-        // Redirect to survey page where download happens after completion
-        router.push('/survey')
+        if (isLoggedIn) {
+            router.push('/survey')
+        } else {
+            router.push('/login?next=/survey')
+        }
     }
 
     return (

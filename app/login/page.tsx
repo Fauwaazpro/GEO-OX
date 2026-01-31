@@ -1,25 +1,24 @@
 "use client"
 
 import { useState } from "react"
-import { createBrowserClient } from "@supabase/ssr"
-import { useRouter } from "next/navigation"
+import { createClient } from "@/utils/supabase/client"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Zap, LogIn } from "lucide-react"
 
 export default function LoginPage() {
+    const router = useRouter()
+    const supabase = createClient()
     const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("") 
+    const [password, setPassword] = useState("")
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState<string | null>(null)
-    const router = useRouter()
-
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
+    const searchParams = useSearchParams()
+    const next = searchParams.get('next') || '/dashboard'
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -35,7 +34,7 @@ export default function LoginPage() {
             setMessage("Error: " + error.message)
             setLoading(false)
         } else {
-            router.push('/dashboard')
+            router.push(next)
             router.refresh()
         }
     }
@@ -61,7 +60,7 @@ export default function LoginPage() {
                             const { error } = await supabase.auth.signInWithOAuth({
                                 provider: 'google',
                                 options: {
-                                    redirectTo: `${location.origin}/auth/callback`,
+                                    redirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
                                 },
                             })
                             if (error) setMessage("Error: " + error.message)
