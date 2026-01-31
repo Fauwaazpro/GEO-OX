@@ -1,32 +1,47 @@
 import { NextResponse } from 'next/server'
 import puppeteer from 'puppeteer'
+import { SimpleCache, normalizeInput } from '@/lib/api-utils'
+
+const cache = new SimpleCache(3600000)
 
 export async function POST(request: Request) {
     const { url } = await request.json()
 
-    // Mock Authority/Topic Map Data
+    if (!url) return NextResponse.json({ error: 'URL is required' }, { status: 400 })
+
+    const cacheKey = `authority_checker_${normalizeInput(url)}`
+    const cached = cache.get(cacheKey)
+    if (cached) return NextResponse.json(cached)
+
+    // Mock Authority Map
     const topicClusters = [
         {
-            topic: "SEO Tools",
-            mainPage: "/tools",
-            subPages: ["/tools/audit", "/tools/rank-tracker"],
-            orphanPages: ["/blog/old-seo-tips"]
+            topic: "Main Service",
+            mainPage: url,
+            subPages: [
+                `${url}/features`,
+                `${url}/pricing`,
+                `${url}/about`
+            ],
+            orphanPages: []
         },
         {
-            topic: "Marketing",
-            mainPage: "/blog/marketing-guide",
-            subPages: [],
-            orphanPages: ["/landing-page-v1", "/temp/promo"]
+            topic: "Blog / Guides",
+            mainPage: `${url}/blog`,
+            subPages: [
+                `${url}/blog/post-1`,
+                `${url}/blog/post-2`
+            ],
+            orphanPages: [
+                `${url}/blog/old-post-orphaned`
+            ]
         }
     ]
 
-    // Simulate crawling delay
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    await new Promise(resolve => setTimeout(resolve, 1500))
 
-    return NextResponse.json({
-        url,
-        topicClusters,
-        orphanPagesCount: 3,
-        internalLinkScore: 72
-    })
+    const responseData = { topicClusters }
+    cache.set(cacheKey, responseData)
+
+    return NextResponse.json(responseData)
 }

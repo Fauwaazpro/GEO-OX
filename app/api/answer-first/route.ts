@@ -1,49 +1,22 @@
 import { NextResponse } from 'next/server'
-import OpenAI from 'openai'
-
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-})
 
 export async function POST(request: Request) {
-    const { topic, content, targetKeyword } = await request.json()
+    const { topic, targetKeyword, content } = await request.json()
 
     if (!content) {
         return NextResponse.json({ error: 'Content is required' }, { status: 400 })
     }
 
-    try {
-        const completion = await openai.chat.completions.create({
-            model: "gpt-4",
-            messages: [
-                {
-                    role: "system",
-                    content: "You are an SEO expert specializing in Answer Engine Optimization (AEO). Structure content to be featured in Google's SGE and Featured Snippets. Use clear headings, bullet points, and direct answers."
-                },
-                {
-                    role: "user",
-                    content: `Rewrite the following content to be "Answer-First".
-                    Topic: ${topic}
-                    Target Keyword: ${targetKeyword}
-                    
-                    Current Content:
-                    ${content.substring(0, 1500)}... (truncated for context)`
-                }
-            ]
-        })
+    // Mock Answer Engine Optimization
+    const intro = `Here is a direct answer for "${topic}":`
+    const boldAnswer = `**${topic} involves ${content.slice(0, 50)}...**`
+    const optimizedContent = `${intro}\n\n${boldAnswer}\n\n${content}\n\n## Key Takeaways\n- Quick point 1\n- Quick point 2`
 
-        const optimizedContent = completion.choices[0].message.content
+    await new Promise(resolve => setTimeout(resolve, 1500))
 
-        return NextResponse.json({
-            optimizedContent,
-            structureAnalysis: {
-                hasDirectAnswer: true,
-                listCount: 3,
-                readingLevel: "8th Grade",
-                aeoScore: 92
-            }
-        })
-    } catch (error: any) {
-        return NextResponse.json({ error: 'Optimization failed', details: error.message }, { status: 500 })
-    }
+    return NextResponse.json({
+        originalContent: content,
+        optimizedContent,
+        format: "Answer-First Structure Applied"
+    })
 }

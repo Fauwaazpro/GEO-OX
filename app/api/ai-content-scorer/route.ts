@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import puppeteer from 'puppeteer'
-import * as cheerio from 'cheerio'
+import { deterministicScore, deterministicBoolean } from '@/lib/api-utils'
 
 export async function POST(request: Request) {
     const { url } = await request.json()
@@ -9,51 +8,21 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'URL is required' }, { status: 400 })
     }
 
-    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] })
+    // Mock AI Scorer (Google Helpful Content System)
+    const overallScore = deterministicScore(url, 45, 95)
+    
+    // Simulate slight delay for "AI processing"
+    await new Promise(resolve => setTimeout(resolve, 2000))
 
-    try {
-        const page = await browser.newPage()
-        await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 })
-        const content = await page.content()
-        await browser.close()
-
-        const $ = cheerio.load(content)
-        const text = $('body').text().replace(/\s+/g, ' ').trim()
-        const wordCount = text.split(' ').length
-
-        // Mock AI Scoring Logic (In a real app, this would call OpenAI)
-        const helpfulnessScore = Math.floor(Math.random() * (95 - 70 + 1)) + 70
-        const experienceScore = Math.floor(Math.random() * (100 - 60 + 1)) + 60
-        const expertiseScore = Math.floor(Math.random() * (100 - 50 + 1)) + 50
-        const authoritativenessScore = Math.floor(Math.random() * (100 - 80 + 1)) + 80
-        const trustScore = Math.floor(Math.random() * (100 - 75 + 1)) + 75
-
-        const overallScore = Math.round((helpfulnessScore + experienceScore + expertiseScore + authoritativenessScore + trustScore) / 5)
-
-        const analysis = {
-            url,
-            overallScore,
-            metrics: {
-                helpfulness: helpfulnessScore,
-                experience: experienceScore,
-                expertise: expertiseScore,
-                authoritativeness: authoritativenessScore,
-                trust: trustScore
-            },
-            wordCount,
-            suggestions: [
-                "Consider adding more personal anecdotes to boost Experience score.",
-                "Cite more authoritative sources to improve Trust.",
-                "Ensure the Author bio is clearly visible and linked."
-            ]
-        }
-
-        return NextResponse.json(analysis)
-
-    } catch (error: any) {
-        return NextResponse.json({
-            error: 'Failed to analyze URL',
-            message: error.message
-        }, { status: 500 })
-    }
+    return NextResponse.json({
+        url,
+        overallScore,
+        metrics: {
+            experience: deterministicScore(url + 'e', 60, 95),
+            expertise: deterministicScore(url + 'ex', 50, 90),
+            authoritativeness: deterministicScore(url + 'a', 40, 85),
+            trustworthiness: deterministicScore(url + 't', 70, 98)
+        },
+        feedback: "Content is well-structured but lacks first-hand experience signals."
+    })
 }
