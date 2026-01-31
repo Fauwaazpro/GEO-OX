@@ -3,64 +3,30 @@ import { NextResponse } from 'next/server'
 export async function POST(request: Request) {
     const { type, data } = await request.json()
 
-    let schema = {}
+    let jsonLd = {}
 
     if (type === 'article') {
-        schema = {
+        jsonLd = {
             "@context": "https://schema.org",
             "@type": "Article",
-            "headline": data.headline,
-            "image": data.image,
+            "headline": data.headline || "Article Headline",
             "author": {
                 "@type": "Person",
-                "name": data.authorName
+                "name": data.authorName || "Author Name"
             },
-            "publisher": {
-                "@type": "Organization",
-                "name": data.publisherName,
-                "logo": {
-                    "@type": "ImageObject",
-                    "url": data.publisherLogo
-                }
-            },
-            "datePublished": data.datePublished
+            "image": data.image || "https://example.com/image.jpg",
+            "datePublished": new Date().toISOString()
         }
     } else if (type === 'product') {
-        schema = {
+        jsonLd = {
             "@context": "https://schema.org",
             "@type": "Product",
-            "name": data.name,
-            "image": data.image,
-            "description": data.description,
-            "brand": {
-                "@type": "Brand",
-                "name": data.brand
-            },
-            "offers": {
-                "@type": "Offer",
-                "url": data.url,
-                "priceCurrency": data.currency,
-                "price": data.price,
-                "availability": "https://schema.org/InStock"
-            }
-        }
-    } else if (type === 'faq') {
-        schema = {
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            "mainEntity": data.questions?.map((q: any) => ({
-                "@type": "Question",
-                "name": q.question,
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": q.answer
-                }
-            }))
+            "name": data.name || "Product Name",
+            "description": data.description || "Product Description"
         }
     }
 
     return NextResponse.json({
-        success: true,
-        jsonLd: JSON.stringify(schema, null, 2)
+        jsonLd: JSON.stringify(jsonLd, null, 2)
     })
 }

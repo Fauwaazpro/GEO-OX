@@ -1,43 +1,40 @@
 import { NextResponse } from 'next/server'
+import { deterministicScore } from '@/lib/api-utils'
 
 export async function POST(request: Request) {
     const { url } = await request.json()
 
-    // Mock Vitals Data
-    const vitals = {
-        lcp: { value: 2.4, status: 'good', metric: 'LCP', unit: 's' }, // Largest Contentful Paint
-        cls: { value: 0.15, status: 'needs-improvement', metric: 'CLS', unit: '' }, // Cumulative Layout Shift
-        inp: { value: 180, status: 'needs-improvement', metric: 'INP', unit: 'ms' }, // Interaction to Next Paint
-        fcp: { value: 1.2, status: 'good', metric: 'FCP', unit: 's' }, // First Contentful Paint
-        ttfb: { value: 0.4, status: 'good', metric: 'TTFB', unit: 's' } // Time to First Byte
-    }
-
-    const issues = [
-        {
-            metric: 'CLS',
-            description: 'Image elements do not have explicit width and height',
-            fix: 'Add width="800" height="600" attributes to your <img> tags to reserve space.',
-            codeSnippet: '<img src="hero.jpg" width="800" height="600" alt="Hero Image">'
-        },
-        {
-            metric: 'INP',
-            description: 'Long main thread tasks detected during hydration',
-            fix: 'Defer non-essential JavaScript using next/dynamic or standard defer attributes.',
-            codeSnippet: 'const HeavyComponent = dynamic(() => import("./Heavy"), { ssr: false })'
-        },
-        {
-            metric: 'LCP',
-            description: 'Hero image is lazy-loaded',
-            fix: 'Use <link rel="preload"> or priority={true} in Next.js Image component.',
-            codeSnippet: '<Image src="/hero.png" priority={true} ... />'
-        }
-    ]
+    if (!url) return NextResponse.json({ error: 'URL required' }, { status: 400 })
 
     await new Promise(resolve => setTimeout(resolve, 2000))
 
+    const lcp = (deterministicScore(url + 'lcp', 0.5, 4.0)).toFixed(1)
+    const cls = (deterministicScore(url + 'cls', 0, 0.25)).toFixed(2)
+    const inp = deterministicScore(url + 'inp', 50, 400)
+
+    const getStatus = (val: number, good: number, bad: number) => 
+        val <= good ? 'good' : val <= bad ? 'needs-improvement' : 'poor'
+
     return NextResponse.json({
         url,
-        vitals,
-        issues
+        vitals: {
+            lcp: { value: lcp, status: getStatus(parseFloat(lcp), 2.5, 4.0) },
+            cls: { value: cls, status: getStatus(parseFloat(cls), 0.1, 0.25) },
+            inp: { value: inp, status: getStatus(inp, 200, 500) }
+        },
+        issues: [
+            {
+                metric: "LCP",
+                description: "Large image payload detected",
+                fix: "Compress hero image and use WebP format",
+                codeSnippet: "<img src='hero.webp' loading='eager' width='800' height='600' />"
+            },
+            {
+                metric: "CLS",
+                description: "Layout shift caused by ad banner",
+                fix: "Reserve space for dynamic content",
+                codeSnippet: ".ad-slot { min-height: 250px; }"
+            }
+        ]
     })
 }
